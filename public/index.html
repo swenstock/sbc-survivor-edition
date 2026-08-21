@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SBC Survivor Edition</title>
+<title>Stonk Broker Challenge — Survivor Edition</title>
 <style>
 :root {
   --bg:#020406; --panel:#071019; --line:#273947; --gold:#ffc928; --green:#59e14e;
@@ -57,7 +57,7 @@ button{font:inherit} a{color:inherit;text-decoration:none}
 <body>
 <div class="top">
   <div class="shell" style="padding:0 18px;display:flex;align-items:center;">
-    <div class="brand"><div class="shield"><img class="js-avatar" alt="SBC Survivor"></div><div><strong>SBC SURVIVOR</strong><span>STOCK KNOCKOUT</span></div></div>
+    <div class="brand"><div class="shield"><img class="js-avatar" alt="Stonk Broker Challenge"></div><div><strong>STONK BROKER CHALLENGE</strong><span>SURVIVOR EDITION</span></div></div>
   </div>
 </div>
 
@@ -66,8 +66,8 @@ button{font:inherit} a{color:inherit;text-decoration:none}
     <img class="js-avatar" alt="">
     <div class="pitch-copy">
       <h1>PICK ONE.<br><span>SURVIVE THE WEEK.</span></h1>
-      <p>32 stocks. One bracket. Never the same pick twice.</p>
-      <div class="pitch-sub">Every round, choose a stock to survive with. Beat your matchup, you're still in. Lose, you're out — for good. Last one standing takes the pot, or everyone left agrees to split it.</div>
+      <p>32 stonks. One bracket. Never the same pick twice.</p>
+      <div class="pitch-sub">Every round, pick a stonk to back. Beat your matchup and you survive as a StonkBroker. Lose, and you're sent packing — for good. Last broker standing takes the pot, or everyone left agrees to split it.</div>
     </div>
   </div>
 
@@ -79,29 +79,24 @@ button{font:inherit} a{color:inherit;text-decoration:none}
   </div>
 
   <div class="actions">
-    <button class="action green" onclick="location.href='#signup'">JOIN A SEASON<small>Free account, pick your first stock in minutes</small></button>
+    <button class="action green" onclick="location.href='#signup'">JOIN A SEASON<small>Free account, pick your first stonk in minutes</small></button>
     <button class="action blue" onclick="location.href='#standings'">SEE WHO'S ALIVE<small>Live standings across every open season</small></button>
   </div>
 
   <div class="panel how">
     <h2>HOW IT WORKS</h2>
     <div class="steps">
-      <div class="step"><div class="num">1</div><h3>Pick a stock</h3><p>Every round, choose one stock from that round's matchups. <strong>Never reuse a stock</strong> — once it's picked, it's gone for the rest of the season.</p></div>
-      <div class="step"><div class="num">2</div><h3>Survive the round</h3><p>Whichever stock in a matchup moves more wins. Your pick wins, you're still alive. It loses, you're out.</p></div>
-      <div class="step"><div class="num">3</div><h3>Regular season</h3><p>32 stocks, split into conferences and divisions, playing a full schedule — just like the format you already know.</p></div>
+      <div class="step"><div class="num">1</div><h3>Pick a stonk</h3><p>Every round, choose one stonk from that round's matchups. <strong>Never reuse a stonk</strong> — once it's picked, it's gone for the rest of the season.</p></div>
+      <div class="step"><div class="num">2</div><h3>Survive the round</h3><p>Whichever stonk in a matchup moves more wins. Your pick wins, you're still alive. It loses, you're sent packing.</p></div>
+      <div class="step"><div class="num">3</div><h3>Regular season</h3><p>32 stonks, split into conferences and divisions, playing a full schedule — just like the format you already know.</p></div>
       <div class="step"><div class="num">4</div><h3>Playoffs &amp; payout</h3><p>Survive to the end and it's <strong>winner take all</strong> — or the remaining survivors can agree to split the pot at any point.</p></div>
     </div>
   </div>
 
-  <div class="foot">SBC Survivor Edition — a Stonk Broker Challenge project. Paper trading, not real securities.</div>
+  <div class="foot">Stonk Broker Challenge — Survivor Edition. Paper trading, not real securities.</div>
 </div>
 
 <script>
-// ---- CHARACTER ART LIVES HERE, AND ONLY HERE ----
-// To swap in a new image: drop the file into public/img/ (any format works
-// - .png, .jpg, .svg, whatever), then change this one line to match its
-// filename. Every character image on the page updates from this single
-// value - nothing else in this file needs to change.
 const AVATAR_SRC = '/img/survivor-avatar.svg';
 document.querySelectorAll('.js-avatar').forEach(img => img.src = AVATAR_SRC);
 
