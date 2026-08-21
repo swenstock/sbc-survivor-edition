@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Season — Stonk Broker Challenge Survivor</title>
+<link rel="stylesheet" href="/css/base.css">
+<style>
+.season-head{padding:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.season-head h1{margin:0;font-size:28px;font-weight:1000;text-transform:capitalize}
+.roster{margin-top:20px;padding:20px}
+.roster h2{margin:0 0 14px;font-size:18px}
+.roster-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #172431}
+.roster-row:last-child{border-bottom:0}
+.roster-row .name{font-weight:700}
+.roster-row.dead .name{color:var(--muted);text-decoration:line-through}
+.roster-row .status{font-size:11px;font-weight:900;text-transform:uppercase}
+.roster-row.alive .status{color:var(--green)}
+.roster-row.dead .status{color:var(--red)}
+.notice{margin-top:20px;padding:18px;text-align:center;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="shell" style="padding:0 18px;display:flex;align-items:center;">
+    <a href="/" class="brand"><div class="shield"><img class="js-avatar" alt="Stonk Broker Challenge"></div><div><strong>STONK BROKER CHALLENGE</strong><span>SURVIVOR EDITION</span></div></a>
+  </div>
+</div>
+
+<div class="shell">
+  <a href="/seasons.html" class="back-link">← All seasons</a>
+
+  <div class="panel season-head" id="seasonHead">
+    <h1 id="seasonTitle">Loading…</h1>
+    <span id="seasonBadge"></span>
+  </div>
+
+  <div class="panel live-strip" id="liveStrip">
+    <div><b id="statEntries">—</b><span>Entries</span></div>
+    <div><b id="statAlive">—</b><span>Alive</span></div>
+    <div><b id="statPot">—</b><span>Pot (STONK)</span></div>
+    <div><b id="statRound">—</b><span>Round</span></div>
+  </div>
+
+  <div class="panel roster">
+    <h2>Who's Alive</h2>
+    <div id="rosterList"></div>
+  </div>
+
+  <div id="joinNotice" class="panel notice" style="display:none;"></div>
+</div>
+
+<script>
+const AVATAR_SRC = '/img/survivor-avatar.svg';
+document.querySelectorAll('.js-avatar').forEach(img => img.src = AVATAR_SRC);
+
+const seasonId = new URLSearchParams(location.search).get('id');
+if (!seasonId) {
+  document.getElementById('seasonTitle').textContent = 'No season specified';
+} else {
+  fetch('/api/knockout/seasons/' + seasonId)
+    .then(r => r.json())
+    .then(({ season }) => {
+      document.getElementById('seasonTitle').textContent = season.cadence + ' Season #' + season.id;
+      document.getElementById('seasonBadge').innerHTML = `<span class="badge badge-${season.status}">${season.status.replace('_',' ')}</span>`;
+      document.getElementById('statPot').textContent = season.pot_stonk.toLocaleString();
+      document.getElementById('statRound').textContent = season.status === 'enrolling' ? '—' : (season.current_round || 1);
+
+      const notice = document.getElementById('joinNotice');
+      if (season.status === 'enrolling') {
+        notice.style.display = 'block';
+        notice.textContent = 'Entries are open for this season. Sign-up isn\'t wired up on this page yet — coming soon.';
+      } else if (season.status === 'complete') {
+        notice.style.display = 'block';
+        notice.textContent = season.champion_ticker
+          ? `Season complete — ${season.champion_ticker} took it.`
+          : 'Season complete.';
+      }
+    })
+    .catch(() => { document.getElementById('seasonTitle').textContent = 'Could not load this season'; });
+
+  fetch('/api/knockout/seasons/' + seasonId + '/entries')
+    .then(r => r.json())
+    .then(({ entries }) => {
+      document.getElementById('statEntries').textContent = entries.length;
+      document.getElementById('statAlive').textContent = entries.filter(e => e.alive).length;
+
+      const list = document.getElementById('rosterList');
+      if (entries.length === 0) {
+        list.innerHTML = '<div class="notice" style="padding:10px 0;">No entries yet.</div>';
+        return;
+      }
+      list.innerHTML = entries.map(e => `
+        <div class="roster-row ${e.alive ? 'alive' : 'dead'}">
+          <span class="name">${e.displayName}</span>
+          <span class="status">${e.alive ? 'Alive' : 'Out — round ' + e.eliminatedRound}</span>
+        </div>
+      `).join('');
+    })
+    .catch(() => {
+      document.getElementById('rosterList').innerHTML = '<div class="notice" style="padding:10px 0;">Couldn\'t load the roster.</div>';
+    });
+}
+</script>
+</body>
+</html>
