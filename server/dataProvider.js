@@ -102,6 +102,9 @@ const LOGO_DOMAINS = {
   TGT: "target.com", HD: "homedepot.com", LOW: "lowes.com", XOM: "exxonmobil.com",
   CVX: "chevron.com", BA: "boeing.com", CAT: "caterpillar.com", GE: "ge.com",
   F: "ford.com", GM: "gm.com", TSM: "tsmc.com", T: "att.com", VZ: "verizon.com",
+  UPS: "ups.com", MRNA: "modernatx.com", SLB: "slb.com", OXY: "oxy.com",
+  LIN: "linde.com", NEM: "newmont.com", DOW: "dow.com", FCX: "fcx.com",
+  NEE: "nexteraenergy.com", DUK: "duke-energy.com", SO: "southerncompany.com", AEP: "aep.com",
 };
 
 function listSymbols() {

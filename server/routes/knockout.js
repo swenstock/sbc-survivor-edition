@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require("../db");
 const requireAuth = require("../middleware/requireAuth");
 const engine = require("../knockoutEngine");
+const { listSymbols, getQuotes } = require("../dataProvider");
 
 // Same minimal admin gate as routes/admin.js - a comma-separated allowlist
 // via env var. Not shared/imported from admin.js since that file doesn't
@@ -53,7 +54,11 @@ router.get("/seasons/:id", (req, res) => {
   const season = db.prepare("SELECT * FROM knockout_seasons WHERE id=?").get(req.params.id);
   if (!season) return res.status(404).json({ error: "Season not found" });
   const roster = db.prepare("SELECT ticker, conference, division FROM knockout_stocks WHERE season_id=?").all(season.id);
-  const schedule = db.prepare("SELECT round_number, phase, stock_a, stock_b, winner_ticker FROM knockout_schedule WHERE season_id=? ORDER BY round_number").all(season.id);
+  const schedule = db.prepare("SELECT round_number, phase, stock_a, stock_b, winner_ticker, stock_a_pct_move, stock_b_pct_move FROM knockout_schedule WHERE season_id=? ORDER BY round_number").all(season.id);
+
+  const logoByTicker = Object.fromEntries(listSymbols().map(s => [s.symbol, s.logoUrl]));
+  roster.forEach(r => { r.logoUrl = logoByTicker[r.ticker] || null; });
+
   res.json({ season, roster, schedule });
 });
 

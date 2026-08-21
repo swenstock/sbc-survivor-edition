@@ -7,12 +7,39 @@
 <link rel="stylesheet" href="/css/base.css">
 <style>
 .season-head{padding:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
-.season-head h1{margin:0;font-size:28px;font-weight:1000;text-transform:capitalize}
-.roster{margin-top:20px;padding:20px}
-.roster h2{margin:0 0 14px;font-size:18px}
-.roster-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #172431}
+.season-head h1{margin:0;font-size:26px;font-weight:1000}
+
+.section{margin-top:20px;padding:20px}
+.section h2{margin:0 0 4px;font-size:18px}
+.section .sub{font-size:12px;color:var(--muted);margin-bottom:14px}
+
+.matchups{display:grid;gap:10px}
+.matchup{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;background:#071019;border:1px solid var(--line);border-radius:12px;padding:12px}
+.stonk{display:flex;align-items:center;gap:10px}
+.stonk img{width:34px;height:34px;border-radius:8px;background:#fff;object-fit:contain;padding:3px}
+.stonk .t{font-weight:900;font-size:15px}
+.stonk .n{font-size:11px;color:var(--muted)}
+.matchup.b .stonk{flex-direction:row-reverse;text-align:right}
+.vs{font-size:11px;color:var(--muted);font-weight:800}
+.pickbtn{border:1px solid var(--line);background:#0d1620;color:var(--white);border-radius:8px;padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer;margin-top:6px}
+.pickbtn:hover{border-color:var(--gold);color:var(--gold)}
+.winner .t{color:var(--green)}
+.mover{font-size:11px;font-weight:800;margin-top:2px}
+.mover.up{color:var(--green)} .mover.down{color:var(--red)}
+
+.conf-tabs{display:flex;gap:8px;margin-bottom:12px}
+.conf-tabs button{flex:1;padding:8px;border-radius:9px;border:1px solid var(--line);background:#0d1620;color:var(--white);font-weight:800;font-size:13px;cursor:pointer}
+.conf-tabs button.on{border-color:var(--gold);background:color-mix(in srgb, var(--gold) 12%, #0d1620)}
+.stand-table{width:100%;border-collapse:collapse;font-size:13px}
+.stand-table th{text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;padding:4px 6px;border-bottom:1px solid var(--line)}
+.stand-table td{padding:7px 6px;border-bottom:1px solid #172431}
+.stand-table .rk{color:var(--muted);width:24px}
+.stand-table img{width:20px;height:20px;border-radius:5px;background:#fff;object-fit:contain;padding:2px;vertical-align:middle;margin-right:7px}
+.stand-table .wl{text-align:right;color:var(--muted)}
+.stand-table .pct{text-align:right;font-weight:800}
+
+.roster-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #172431}
 .roster-row:last-child{border-bottom:0}
-.roster-row .name{font-weight:700}
 .roster-row.dead .name{color:var(--muted);text-decoration:line-through}
 .roster-row .status{font-size:11px;font-weight:900;text-transform:uppercase}
 .roster-row.alive .status{color:var(--green)}
@@ -28,7 +55,7 @@
 </div>
 
 <div class="shell">
-  <a href="/seasons.html" class="back-link">← All seasons</a>
+  <a href="/seasons.html" class="back-link">← Trading Floor</a>
 
   <div class="panel season-head" id="seasonHead">
     <h1 id="seasonTitle">Loading…</h1>
@@ -42,7 +69,23 @@
     <div><b id="statRound">—</b><span>Round</span></div>
   </div>
 
-  <div class="panel roster">
+  <div class="panel section">
+    <h2>This Round's Matchups</h2>
+    <div class="sub">Pick a stonk to survive with. Winner is whichever moves more.</div>
+    <div id="matchups" class="matchups"></div>
+  </div>
+
+  <div class="panel section">
+    <h2>Standings</h2>
+    <div class="sub">Regular-season record within each conference.</div>
+    <div class="conf-tabs">
+      <button id="tabGrowth" class="on">Growth</button>
+      <button id="tabValue">Value</button>
+    </div>
+    <table class="stand-table" id="standTable"><tbody></tbody></table>
+  </div>
+
+  <div class="panel section">
     <h2>Who's Alive</h2>
     <div id="rosterList"></div>
   </div>
@@ -54,19 +97,30 @@
 const AVATAR_SRC = '/img/survivor-avatar.svg';
 document.querySelectorAll('.js-avatar').forEach(img => img.src = AVATAR_SRC);
 
+const TIER_NAMES = { runner: 'Runner', clerk: 'Clerk', trader: 'Trader', junior: 'Jr. Stonkbroker' };
 const seasonId = new URLSearchParams(location.search).get('id');
+const logoFallback = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="34" height="34"%3E%3Crect width="34" height="34" fill="%23273947"/%3E%3C/svg%3E';
+
+function stonkPickAttempt(ticker) {
+  alert('Sign up and log in to make picks — that part isn\'t wired up on this page yet.');
+}
+window.stonkPickAttempt = stonkPickAttempt;
+
 if (!seasonId) {
   document.getElementById('seasonTitle').textContent = 'No season specified';
 } else {
+  let seasonData = null;
+
   fetch('/api/knockout/seasons/' + seasonId)
     .then(r => r.json())
-    .then(({ season }) => {
-      const TIER_NAMES = { runner: 'Runner', clerk: 'Clerk', trader: 'Trader', junior: 'Jr. Stonkbroker' };
+    .then(({ season, roster, schedule }) => {
+      seasonData = { season, roster, schedule };
       const title = (TIER_NAMES[season.tier] || season.cadence) + ' — ' + new Date(season.season_starts_at).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
       document.getElementById('seasonTitle').textContent = title;
       document.getElementById('seasonBadge').innerHTML = `<span class="badge badge-${season.status}">${season.status.replace('_',' ')}</span>`;
       document.getElementById('statPot').textContent = season.pot_stonk.toLocaleString();
-      document.getElementById('statRound').textContent = season.status === 'enrolling' ? '—' : (season.current_round || 1);
+      const round = season.current_round || 1;
+      document.getElementById('statRound').textContent = season.status === 'enrolling' ? '—' : round;
 
       const notice = document.getElementById('joinNotice');
       if (season.status === 'enrolling') {
@@ -74,30 +128,72 @@ if (!seasonId) {
         notice.textContent = 'Entries are open for this season. Sign-up isn\'t wired up on this page yet — coming soon.';
       } else if (season.status === 'complete') {
         notice.style.display = 'block';
-        notice.textContent = season.champion_ticker
-          ? `Season complete — ${season.champion_ticker} took it.`
-          : 'Season complete.';
+        notice.textContent = season.champion_ticker ? `Season complete — ${season.champion_ticker} took it.` : 'Season complete.';
+      }
+
+      const logoByTicker = Object.fromEntries(roster.map(r => [r.ticker, r.logoUrl]));
+      const roundGames = schedule.filter(g => g.round_number === round);
+      const grid = document.getElementById('matchups');
+      if (roundGames.length === 0) {
+        grid.innerHTML = '<div class="notice" style="padding:10px 0;">No matchups yet for this round.</div>';
+      } else {
+        grid.innerHTML = roundGames.map(g => {
+          const resolved = !!g.winner_ticker;
+          const side = (ticker, pct, cls) => `
+            <div class="stonk ${resolved && g.winner_ticker===ticker ? 'winner' : ''}">
+              <img src="${logoByTicker[ticker] || logoFallback}" onerror="this.src='${logoFallback}'" alt="">
+              <div>
+                <div class="t">${ticker}</div>
+                ${resolved ? `<div class="mover ${pct>=0?'up':'down'}">${pct>=0?'+':''}${pct.toFixed(2)}%</div>` : (!resolved && season.status!=='enrolling' ? `<button class="pickbtn" onclick="stonkPickAttempt('${ticker}')">PICK</button>` : '')}
+              </div>
+            </div>`;
+          return `<div class="matchup">${side(g.stock_a, g.stock_a_pct_move, 'a')}<div class="vs">VS</div>${side(g.stock_b, g.stock_b_pct_move, 'b')}</div>`;
+        }).join('');
       }
     })
     .catch(() => { document.getElementById('seasonTitle').textContent = 'Could not load this season'; });
+
+  function renderStandings(conf) {
+    fetch('/api/knockout/seasons/' + seasonId + '/standings')
+      .then(r => r.json())
+      .then(data => {
+        const rows = [...data[conf]].sort((a,b) => b.pct - a.pct);
+        const logoByTicker = Object.fromEntries((seasonData?.roster || []).map(r => [r.ticker, r.logoUrl]));
+        document.querySelector('#standTable tbody').innerHTML = rows.map((s,i) => `
+          <tr>
+            <td class="rk">${i+1}</td>
+            <td><img src="${logoByTicker[s.ticker] || logoFallback}" onerror="this.src='${logoFallback}'" alt="">${s.ticker}</td>
+            <td class="wl">${s.wins}-${s.losses}</td>
+            <td class="pct">${s.pct.toFixed(3).replace(/^0/,'')}</td>
+          </tr>`).join('');
+      })
+      .catch(() => {});
+  }
+  document.getElementById('tabGrowth').addEventListener('click', () => {
+    document.getElementById('tabGrowth').classList.add('on');
+    document.getElementById('tabValue').classList.remove('on');
+    renderStandings('growth');
+  });
+  document.getElementById('tabValue').addEventListener('click', () => {
+    document.getElementById('tabValue').classList.add('on');
+    document.getElementById('tabGrowth').classList.remove('on');
+    renderStandings('value');
+  });
+  setTimeout(() => renderStandings('growth'), 50); // let seasonData populate first for logos
 
   fetch('/api/knockout/seasons/' + seasonId + '/entries')
     .then(r => r.json())
     .then(({ entries }) => {
       document.getElementById('statEntries').textContent = entries.length;
       document.getElementById('statAlive').textContent = entries.filter(e => e.alive).length;
-
       const list = document.getElementById('rosterList');
-      if (entries.length === 0) {
-        list.innerHTML = '<div class="notice" style="padding:10px 0;">No entries yet.</div>';
-        return;
-      }
-      list.innerHTML = entries.map(e => `
-        <div class="roster-row ${e.alive ? 'alive' : 'dead'}">
-          <span class="name">${e.displayName}</span>
-          <span class="status">${e.alive ? 'Alive' : 'Out — round ' + e.eliminatedRound}</span>
-        </div>
-      `).join('');
+      list.innerHTML = entries.length === 0
+        ? '<div class="notice" style="padding:10px 0;">No entries yet.</div>'
+        : entries.map(e => `
+          <div class="roster-row ${e.alive ? 'alive' : 'dead'}">
+            <span class="name">${e.displayName}</span>
+            <span class="status">${e.alive ? 'Alive' : 'Out — round ' + e.eliminatedRound}</span>
+          </div>`).join('');
     })
     .catch(() => {
       document.getElementById('rosterList').innerHTML = '<div class="notice" style="padding:10px 0;">Couldn\'t load the roster.</div>';
