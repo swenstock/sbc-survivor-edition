@@ -21,11 +21,32 @@ function requireAdmin(req, res, next) {
 
 router.get("/seasons", (req, res) => {
   const seasons = db.prepare(`
-    SELECT id, cadence, entry_fee_stonk, status, current_round, total_regular_rounds,
-           enrollment_opens_at, enrollment_closes_at, season_starts_at, pot_stonk, champion_ticker
-    FROM knockout_seasons ORDER BY season_starts_at DESC LIMIT 50
+    SELECT s.id, s.cadence, s.tier, s.entry_fee_stonk, s.status, s.current_round, s.total_regular_rounds,
+           s.enrollment_opens_at, s.enrollment_closes_at, s.season_starts_at, s.pot_stonk, s.champion_ticker,
+           (SELECT COUNT(*) FROM knockout_entries e WHERE e.season_id = s.id) AS entry_count,
+           (SELECT COUNT(*) FROM knockout_entries e WHERE e.season_id = s.id AND e.alive = 1) AS alive_count
+    FROM knockout_seasons s ORDER BY s.season_starts_at DESC LIMIT 50
   `).all();
-  res.json({ seasons });
+  res.json({ seasons, tiers: engine.TIERS });
+});
+
+// The actual fix for "who's alive belongs inside the season being watched,
+// not on the homepage" - a roster scoped to exactly one season. Display
+// names only, never emails - same privacy posture as the main SBC's public
+// leaderboards. Alive entries first, then eliminated ones ordered by how
+// far they got (furthest first), same convention real survivor pools use.
+router.get("/seasons/:id/entries", (req, res) => {
+  const season = db.prepare("SELECT id FROM knockout_seasons WHERE id=?").get(req.params.id);
+  if (!season) return res.status(404).json({ error: "Season not found" });
+  const entries = db.prepare(`
+    SELECT u.display_name AS displayName, e.alive, e.eliminated_round AS eliminatedRound
+    FROM knockout_entries e
+    JOIN accounts a ON a.id = e.account_id
+    JOIN users u ON u.id = a.user_id
+    WHERE e.season_id = ?
+    ORDER BY e.alive DESC, e.eliminated_round DESC, e.joined_at ASC
+  `).all(req.params.id);
+  res.json({ entries });
 });
 
 router.get("/seasons/:id", (req, res) => {

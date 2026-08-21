@@ -19,6 +19,7 @@ function run() {
     CREATE TABLE IF NOT EXISTS knockout_seasons (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       cadence TEXT NOT NULL,              -- 'weekly' | 'daily' | 'hourly'
+      tier TEXT,                          -- 'runner' | 'clerk' | 'trader' | 'junior' - which of the 4 parallel brackets this is
       entry_fee_stonk REAL NOT NULL,
       status TEXT NOT NULL DEFAULT 'enrolling',
                                            -- enrolling -> regular_season -> playoffs -> complete
@@ -133,6 +134,11 @@ function run() {
       UNIQUE(entry_id)
     );
   `);
+
+  // The live database already has knockout_seasons from before tiers
+  // existed - CREATE TABLE IF NOT EXISTS above is a no-op for it, so the
+  // actual migration for existing rows happens here.
+  addColumn('knockout_seasons', 'tier TEXT');
 }
 
 module.exports = { run, columns, addColumn };

@@ -18,6 +18,17 @@ const CONFERENCES = {
 };
 const ACTIVATED_STONKBROKER_BACKING = 733332; // matches prizeLadder.js's documented Main Event unit
 
+// Same tier names and entry prices as the main SBC site, minus Free Roll
+// (no funding source for it here yet - see knockoutScheduler.js). Reusing
+// the exact numbers rather than inventing new ones, so the brand stays
+// consistent between the two projects.
+const TIERS = {
+  runner: { name: 'Runner', entryFeeStonk: 100 },
+  clerk: { name: 'Clerk', entryFeeStonk: 200 },
+  trader: { name: 'Trader', entryFeeStonk: 400 },
+  junior: { name: 'Jr. Stonkbroker', entryFeeStonk: 1050 },
+};
+
 const RIVAL_SAME = { tech:'consumer', consumer:'tech', healthcare:'industrials', industrials:'healthcare',
                       financials:'energy', energy:'financials', materials:'utilities', utilities:'materials' };
 const RIVAL_CROSS = { tech:'financials', consumer:'energy', healthcare:'materials', industrials:'utilities',
@@ -142,11 +153,11 @@ function computeRealPriceMoves({ seasonId, roundNumber }) {
 
 // ---- Season lifecycle ----
 
-function createSeason({ cadence, entryFeeStonk, enrollmentOpensAt, enrollmentClosesAt, seasonStartsAt }) {
+function createSeason({ cadence, tier, entryFeeStonk, enrollmentOpensAt, enrollmentClosesAt, seasonStartsAt }) {
   const seasonId = db.prepare(`
-    INSERT INTO knockout_seasons (cadence, entry_fee_stonk, enrollment_opens_at, enrollment_closes_at, season_starts_at)
-    VALUES (?,?,?,?,?) RETURNING id
-  `).get(cadence, entryFeeStonk, enrollmentOpensAt, enrollmentClosesAt, seasonStartsAt).id;
+    INSERT INTO knockout_seasons (cadence, tier, entry_fee_stonk, enrollment_opens_at, enrollment_closes_at, season_starts_at)
+    VALUES (?,?,?,?,?,?) RETURNING id
+  `).get(cadence, tier || null, entryFeeStonk, enrollmentOpensAt, enrollmentClosesAt, seasonStartsAt).id;
 
   const insertStock = db.prepare('INSERT INTO knockout_stocks (season_id, ticker, conference, division) VALUES (?,?,?,?)');
   for (const conf of Object.keys(CONFERENCES)) {
@@ -402,7 +413,7 @@ function settleSeason({ seasonId, reason }) {
 }
 
 module.exports = {
-  CONFERENCES, allStocks, divisionsOf, stocksIn,
+  CONFERENCES, allStocks, divisionsOf, stocksIn, TIERS,
   createSeason, enterSeason, submitPick, openRound, resolveRound,
   standingsFor, seedPlayoffs, resolvePlayoffRound,
   voteSplit, checkSplitConsensus, settleSeason,

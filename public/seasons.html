@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trading Floor — Stonk Broker Challenge Survivor</title>
+<link rel="stylesheet" href="/css/base.css">
+<style>
+.tier-grid{display:grid;gap:14px;margin-top:20px}
+.tier-card{padding:22px;display:flex;justify-content:space-between;align-items:center;gap:16px;cursor:pointer;transition:.15s;border:1px solid var(--line)}
+.tier-card:hover{transform:translateY(-2px);border-color:var(--gold)}
+.tier-card .left{display:flex;flex-direction:column;gap:4px}
+.tier-card .name{font-size:22px;font-weight:1000}
+.tier-card .price{font-size:13px;color:var(--gold);font-weight:800}
+.tier-card .right{display:flex;gap:22px;text-align:right}
+.tier-card .stat b{display:block;color:var(--white);font-size:18px}
+.tier-card .stat span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.empty-stat{color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="shell" style="padding:0 18px;display:flex;align-items:center;">
+    <a href="/" class="brand"><div class="shield"><img class="js-avatar" alt="Stonk Broker Challenge"></div><div><strong>STONK BROKER CHALLENGE</strong><span>SURVIVOR EDITION</span></div></a>
+  </div>
+</div>
+
+<div class="shell">
+  <a href="/" class="back-link">← Home</a>
+  <h1 style="font-size:32px;margin:8px 0 0;font-weight:1000;">Trading Floor</h1>
+  <p style="color:var(--muted);font-size:14px;margin-top:4px;">Pick your tier. Today's bracket for that tier is where you pick, and where you see who's alive.</p>
+
+  <div id="grid" class="tier-grid"></div>
+</div>
+
+<script>
+const AVATAR_SRC = '/img/survivor-avatar.svg';
+document.querySelectorAll('.js-avatar').forEach(img => img.src = AVATAR_SRC);
+
+const TIER_ORDER = ['runner', 'clerk', 'trader', 'junior'];
+
+fetch('/api/knockout/seasons')
+  .then(r => r.json())
+  .then(({ seasons, tiers }) => {
+    const grid = document.getElementById('grid');
+    grid.innerHTML = TIER_ORDER.map(tierKey => {
+      const tierInfo = tiers[tierKey];
+      // Prefer whatever's actively running for this tier today; fall back
+      // to an upcoming (enrolling) one if nothing's live yet.
+      const tierSeasons = seasons.filter(s => s.tier === tierKey);
+      const current = tierSeasons.find(s => s.status === 'regular_season' || s.status === 'playoffs')
+        || tierSeasons.find(s => s.status === 'enrolling')
+        || tierSeasons[0];
+
+      if (!current) {
+        return `
+          <div class="panel tier-card" style="cursor:default;">
+            <div class="left">
+              <div class="name">${tierInfo.name}</div>
+              <div class="price">${tierInfo.entryFeeStonk.toLocaleString()} STONK entry</div>
+            </div>
+            <div class="empty-stat">No bracket yet — check back soon</div>
+          </div>`;
+      }
+      return `
+        <div class="panel tier-card" onclick="location.href='/season.html?id=${current.id}'">
+          <div class="left">
+            <div class="name">${tierInfo.name}</div>
+            <div class="price">${tierInfo.entryFeeStonk.toLocaleString()} STONK entry &nbsp;•&nbsp; <span class="badge badge-${current.status}">${current.status.replace('_',' ')}</span></div>
+          </div>
+          <div class="right">
+            <div class="stat"><b>${current.entry_count}</b><span>Entries</span></div>
+            <div class="stat"><b>${current.alive_count}</b><span>Alive</span></div>
+            <div class="stat"><b>${current.pot_stonk.toLocaleString()}</b><span>Pot</span></div>
+          </div>
+        </div>`;
+    }).join('');
+  })
+  .catch(() => {
+    document.getElementById('grid').innerHTML = '<div class="panel empty-stat" style="padding:40px;text-align:center;">Couldn\'t load the trading floor right now.</div>';
+  });
+</script>
+</body>
+</html>
